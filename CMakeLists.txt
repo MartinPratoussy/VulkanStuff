@@ -4,7 +4,11 @@ project(VulkanTuto VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+
+# Windows-specific: set MSVC runtime library
+if(MSVC)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
 
 # Optional: allow user to choose to compile GLSL -> SPV with glslc
 option(COMPILE_SHADERS "Compile GLSL shaders to SPIR-V with glslc if available" ON)
@@ -19,13 +23,35 @@ list(FILTER APP_SOURCES EXCLUDE REGEX ".*/compile\\.bat$")
 # Define executable
 add_executable(${PROJECT_NAME} ${APP_SOURCES})
 
-find_path(GLFW_INCLUDE_DIR "GLFW/glfw3.h" HINTS "D:/Documents/Visual Studio 18/Libraries/glfw-3.4.bin.WIN64/include")
-find_library(GLFW_LIBRARY NAMES glfw3 glfw PATHS "D:/Documents/Visual Studio 18/Libraries/glfw-3.4.bin.WIN64/lib-vc2022")
-if(GLFW_INCLUDE_DIR AND GLFW_LIBRARY)
-  target_include_directories(${PROJECT_NAME} PUBLIC ${GLFW_INCLUDE_DIR})
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${GLFW_LIBRARY})
+# Find GLFW with platform-specific fallbacks
+if(WIN32)
+  # Windows: try vcpkg first, then hardcoded path
+  find_package(GLFW3 QUIET CONFIG)
+  if(NOT GLFW3_FOUND)
+    find_path(GLFW_INCLUDE_DIR "GLFW/glfw3.h" HINTS "D:/Documents/Visual Studio 18/Libraries/glfw-3.4.bin.WIN64/include")
+    find_library(GLFW_LIBRARY NAMES glfw3 glfw PATHS "D:/Documents/Visual Studio 18/Libraries/glfw-3.4.bin.WIN64/lib-vc2022")
+    if(NOT GLFW_INCLUDE_DIR OR NOT GLFW_LIBRARY)
+      message(FATAL_ERROR "GLFW not found on Windows; use vcpkg or install GLFW manually.")
+    endif()
+    target_include_directories(${PROJECT_NAME} PUBLIC ${GLFW_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${GLFW_LIBRARY})
+  else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
+  endif()
 else()
-  message(FATAL_ERROR "GLFW not found; use vcpkg or install GLFW with CMake export.")
+  # Linux/macOS: use system package manager (apt/brew)
+  find_package(glfw3 REQUIRED)
+  target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
+endif()
+
+# Platform defines for Vulkan surface extensions
+if(WIN32)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE VK_USE_PLATFORM_WIN32_KHR)
+elseif(APPLE)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE VK_USE_PLATFORM_MACOS_MVK)
+elseif(UNIX AND NOT APPLE)
+  # Linux: use Xlib for X11, or set to WAYLAND_KHR for Wayland
+  target_compile_definitions(${PROJECT_NAME} PRIVATE VK_USE_PLATFORM_XLIB_KHR)
 endif()
 
 # Find dependencies
@@ -35,15 +61,7 @@ find_package(Vulkan REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 # Link libraries (use imported target for Vulkan)
-target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan ${GLFW_LIBRARY})
-
-# Platform defines often required when NOT using GLFW to create surfaces;
-# GLFW handles platform surface extensions, so this may be unnecessary, but keep as reference:
-if(WIN32)
-  target_compile_definitions(${PROJECT_NAME} PRIVATE VK_USE_PLATFORM_WIN32_KHR)
-elseif(APPLE)
-  target_compile_definitions(${PROJECT_NAME} PRIVATE VK_USE_PLATFORM_MACOS_MVK)
-endif()
+target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
 
 # Put runtime binary in a predictable place
 set_target_properties(${PROJECT_NAME} PROPERTIES
