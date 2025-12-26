@@ -5,7 +5,7 @@
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
-namespace Vertex
+namespace Buffer
 {
     struct Vertex
     {
@@ -39,21 +39,53 @@ namespace Vertex
         }
     };
 
-    const std::vector<Vertex> vertices = {
-        {{0.0f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}},
-    };
+    const std::vector<Vertex> vertices =
+        {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+         {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+         {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+         {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+
+    const std::vector<std::uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
     void createVertexBuffer(
         VkDevice &device,
         VkPhysicalDevice &physicalDevice,
         VkBuffer &vertexBuffer,
+        VkDeviceMemory &vertexBufferMemory,
+        VkCommandPool &commandPool,
+        VkQueue &graphicsQueue
+    );
+
+    void createIndexBuffer(
+        VkDevice &device,
+        VkPhysicalDevice &physicalDevice,
+        VkBuffer &vertexBuffer,
+        VkDeviceMemory &vertexBufferMemory,
+        VkCommandPool &commandPool,
+        VkQueue &graphicsQueue
+    );
+
+    void createBuffer(
+        VkDevice &device,
+        VkPhysicalDevice &physicalDevice,
+        VkDeviceSize size,
+        VkBufferUsageFlags usage,
+        VkMemoryPropertyFlags properties,
+        VkBuffer &vertexBuffer,
         VkDeviceMemory &vertexBufferMemory
+    );
+
+    void copyBuffer(
+        VkDevice &device,
+        VkBuffer srcBuffer,
+        VkBuffer dstBuffer,
+        VkDeviceSize size,
+        VkCommandPool &commandPool,
+        VkQueue &graphicsQueue
     );
 
     std::uint32_t findMemoryType(
         VkPhysicalDevice &physicalDevice, std::uint32_t typeFilter, VkMemoryPropertyFlags properties
     );
 
-} // namespace Vertex
+} // namespace Buffer

@@ -1,11 +1,9 @@
 #include <cassert>
 #include <stdexcept>
 
+#include "Buffer.hpp"
 #include "GraphicsPipeline.hpp"
-#include "Vertex.hpp"
 #include "helper.hpp"
-
-#include "FrameSize.hpp"
 
 void GraphicsPipeline::createGraphicsPipeline(
     VkDevice &device,
@@ -62,8 +60,8 @@ void GraphicsPipeline::createGraphicsPipeline(
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-    auto bindingDescription = Vertex::Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::Vertex::getAttributeDescriptions();
+    auto bindingDescription = Buffer::Vertex::getBindingDescription();
+    auto attributeDescriptions = Buffer::Vertex::getAttributeDescriptions();
 
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(

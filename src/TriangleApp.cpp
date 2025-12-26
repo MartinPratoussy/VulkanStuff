@@ -3,6 +3,7 @@
 #include <ranges>
 #include <stdexcept>
 
+#include "Buffer.hpp"
 #include "Command.hpp"
 #include "Device.hpp"
 #include "FrameSize.hpp"
@@ -13,7 +14,6 @@
 #include "Surface.hpp"
 #include "SwapChain.hpp"
 #include "Synchronisation.hpp"
-#include "Vertex.hpp"
 
 void TriangleApp::run()
 {
@@ -68,7 +68,12 @@ void TriangleApp::initVulkan()
 
     Command::createCommandPool(device, physicalDevice, surface, commandPool);
 
-    Vertex::createVertexBuffer(device, physicalDevice, vertexBuffer, vertexBufferMemory);
+    Buffer::createVertexBuffer(
+        device, physicalDevice, vertexBuffer, vertexBufferMemory, commandPool, graphicsQueue
+    );
+    Buffer::createIndexBuffer(
+        device, physicalDevice, indexBuffer, indexBufferMemory, commandPool, graphicsQueue
+    );
 
     Command::createCommandBuffers(device, commandPool, commandBuffers, MAX_FRAMES_IN_FLIGHT);
 
@@ -125,7 +130,8 @@ void TriangleApp::drawFrame()
         swapChainFramebuffers[imageIndex],
         swapChainExtent,
         graphicsPipeline,
-        vertexBuffer
+        vertexBuffer,
+        indexBuffer
     );
 
     VkSubmitInfo submitInfo{};
@@ -214,6 +220,9 @@ void TriangleApp::cleanupSwapChain()
 void TriangleApp::cleanup()
 {
     cleanupSwapChain();
+
+    vkDestroyBuffer(device, indexBuffer, nullptr);
+    vkFreeMemory(device, indexBufferMemory, nullptr);
 
     vkDestroyBuffer(device, vertexBuffer, nullptr);
     vkFreeMemory(device, vertexBufferMemory, nullptr);

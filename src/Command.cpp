@@ -1,6 +1,6 @@
 #include "Command.hpp"
+#include "Buffer.hpp"
 #include "Queue.hpp"
-#include "Vertex.hpp"
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 
@@ -51,7 +51,8 @@ void Command::recordCommandBuffer(
     VkFramebuffer &framebuffer,
     VkExtent2D &extent,
     VkPipeline &graphicsPipeline,
-    VkBuffer &vertexBuffer
+    VkBuffer &vertexBuffer,
+    VkBuffer &indexBuffer
 )
 {
     VkCommandBufferBeginInfo beginInfo{};
@@ -100,8 +101,9 @@ void Command::recordCommandBuffer(
     VkBuffer vertexBuffers[] = {vertexBuffer};
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-    vkCmdDraw(commandBuffer, static_cast<std::uint32_t>(Vertex::vertices.size()), 1, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, static_cast<std::uint32_t>(Buffer::indices.size()), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 

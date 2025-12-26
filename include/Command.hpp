@@ -25,6 +25,7 @@ namespace Command
         VkFramebuffer &framebuffer,
         VkExtent2D &extent,
         VkPipeline &graphicsPipeline,
-        VkBuffer &vertexBuffer
+        VkBuffer &vertexBuffer,
+        VkBuffer &indexBuffer
     );
 } // namespace Command
