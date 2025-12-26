@@ -1,10 +1,15 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
 #include <vector>
-#include <stdexcept>
+#include <vulkan/vulkan.h>
 
 namespace Framebuffer
 {
-	void createFramebuffers(VkDevice& device, VkRenderPass& renderPass, const std::vector<VkImageView>& swapChainImageViews, VkExtent2D& swapChainExtent, std::vector<VkFramebuffer>& swapChainFramebuffers);
+    void createFramebuffers(
+        VkDevice &device,
+        VkRenderPass &renderPass,
+        const std::vector<VkImageView> &swapChainImageViews,
+        VkExtent2D &swapChainExtent,
+        std::vector<VkFramebuffer> &swapChainFramebuffers
+    );
 } // namespace Framebuffer

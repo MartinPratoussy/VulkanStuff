@@ -1,10 +1,16 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-#include <vector>
 #include <stdexcept>
+#include <vector>
+#include <vulkan/vulkan.h>
 
 namespace Synchronization
 {
-	void createSyncObjects(VkDevice& device, VkSemaphore& imageAvailableSemaphores, VkSemaphore& renderFinishedSemaphores, VkFence& inFlightFences);
+    void createSyncObjects(
+        VkDevice &device,
+        std::vector<VkSemaphore> &imageAvailableSemaphores,
+        std::vector<VkSemaphore> &renderFinishedSemaphores,
+        std::vector<VkFence> &inFlightFences,
+        std::size_t maxFramesInFlight
+    );
 } // namespace Synchronization

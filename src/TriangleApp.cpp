@@ -1,137 +1,174 @@
 #include "TriangleApp.hpp"
 
+#include <ranges>
 #include <stdexcept>
-#include <map>
 
+#include "Command.hpp"
 #include "Device.hpp"
+#include "FrameSize.hpp"
+#include "Framebuffer.hpp"
+#include "GraphicsPipeline.hpp"
+#include "ImageViews.hpp"
+#include "Instance.hpp"
 #include "Surface.hpp"
 #include "SwapChain.hpp"
-#include "FrameSize.hpp"
-#include "Instance.hpp"
-#include "ImageViews.hpp"
-#include "GraphicsPipeline.hpp"
-#include "Framebuffer.hpp"
-#include "Command.hpp"
 #include "Synchronisation.hpp"
 
 void TriangleApp::run()
 {
-	initWindow();
-	initVulkan();
-	mainLoop();
-	cleanup();
+    initWindow();
+    initVulkan();
+    mainLoop();
+    cleanup();
 }
 
 void TriangleApp::initWindow()
 {
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-	window = glfwCreateWindow(FrameSize::WIDTH, FrameSize::HEIGHT, "Vulkan Triangle", nullptr, nullptr);
+    glfwInit();
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    window =
+        glfwCreateWindow(FrameSize::WIDTH, FrameSize::HEIGHT, "Vulkan Triangle", nullptr, nullptr);
 }
 
 void TriangleApp::initVulkan()
 {
-	Instance::createInstance(instance);
+    Instance::createInstance(instance);
 
-	Surface::createSurface(instance, window, &surface);
+    Surface::createSurface(instance, window, &surface);
 
-	Device::pickPhysicalDevice(instance, physicalDevice, surface);
-	Device::checkDeviceExtensionSupport(physicalDevice);
-	Device::createLogicalDevice(physicalDevice, device, graphicsQueue, presentQueue, surface);
+    Device::pickPhysicalDevice(instance, physicalDevice, surface);
+    Device::checkDeviceExtensionSupport(physicalDevice);
+    Device::createLogicalDevice(physicalDevice, device, graphicsQueue, presentQueue, surface);
 
-	SwapChain::createSwapChain(physicalDevice, device, surface, swapChain, swapChainImages, swapChainExtent);
+    SwapChain::createSwapChain(
+        physicalDevice, device, surface, swapChain, swapChainImages, swapChainExtent
+    );
 
-	ImageViews::createImageViews(device, swapChainImages, VK_FORMAT_B8G8R8A8_SRGB, swapChainImageViews);
+    ImageViews::
+        createImageViews(device, swapChainImages, VK_FORMAT_B8G8R8A8_SRGB, swapChainImageViews);
 
-	GraphicsPipeline::createRenderPass(device, renderPass);
-	GraphicsPipeline::createGraphicsPipeline(device, swapChainExtent, pipelineLayout, graphicsPipeline, renderPass);
+    GraphicsPipeline::createRenderPass(device, renderPass);
+    GraphicsPipeline::createGraphicsPipeline(
+        device, swapChainExtent, pipelineLayout, graphicsPipeline, renderPass
+    );
 
-	Framebuffer::createFramebuffers(device, renderPass, swapChainImageViews, swapChainExtent, swapChainFramebuffers);
+    Framebuffer::createFramebuffers(
+        device, renderPass, swapChainImageViews, swapChainExtent, swapChainFramebuffers
+    );
 
-	Command::createCommandPool(device, physicalDevice, surface, commandPool);
-	Command::createCommandBuffer(device, commandPool, commandBuffer);
+    Command::createCommandPool(device, physicalDevice, surface, commandPool);
+    Command::createCommandBuffers(device, commandPool, commandBuffers, MAX_FRAMES_IN_FLIGHT);
 
-	Synchronization::createSyncObjects(device, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
+    Synchronization::createSyncObjects(
+        device,
+        imageAvailableSemaphores,
+        renderFinishedSemaphores,
+        inFlightFences,
+        MAX_FRAMES_IN_FLIGHT
+    );
 }
 
 void TriangleApp::mainLoop()
 {
-	while (!glfwWindowShouldClose(window))
-	{
-		glfwPollEvents();
-		drawFrame();
-	}
+    while (!glfwWindowShouldClose(window))
+    {
+        glfwPollEvents();
+        drawFrame();
+    }
 
-	vkDeviceWaitIdle(device);
+    vkDeviceWaitIdle(device);
 }
 
 void TriangleApp::drawFrame()
 {
-	vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-	vkResetFences(device, 1, &inFlightFence);
+    vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    vkResetFences(device, 1, &inFlightFences[currentFrame]);
 
-	std::uint32_t imageIndex;
-	vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+    std::uint32_t imageIndex;
+    vkAcquireNextImageKHR(
+        device,
+        swapChain,
+        UINT64_MAX,
+        imageAvailableSemaphores[currentFrame],
+        VK_NULL_HANDLE,
+        &imageIndex
+    );
 
-	vkResetCommandBuffer(commandBuffer, 0);
-	Command::recordCommandBuffer(commandBuffer, renderPass, swapChainFramebuffers[imageIndex], swapChainExtent, graphicsPipeline);
+    vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+    Command::recordCommandBuffer(
+        commandBuffers[currentFrame],
+        renderPass,
+        swapChainFramebuffers[imageIndex],
+        swapChainExtent,
+        graphicsPipeline
+    );
 
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore waitSemaphores[] = { imageAvailableSemaphore };
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
+    VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
 
-	VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
+    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to submit draw command buffer!");
-	}
+    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to submit draw command buffer!");
+    }
 
-	VkPresentInfoKHR presentInfo{};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = signalSemaphores;
+    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
-	VkSwapchainKHR swapChains[] = { swapChain };
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-	presentInfo.pImageIndices = &imageIndex;
-	presentInfo.pResults = nullptr;
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
 
-	vkQueuePresentKHR(presentQueue, &presentInfo);
+    VkSwapchainKHR swapChains[] = {swapChain};
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pResults = nullptr;
+
+    vkQueuePresentKHR(presentQueue, &presentInfo);
+}
+
+void recreateSwapChain()
+{
 }
 
 void TriangleApp::cleanup()
 {
-	vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
-	vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
-	vkDestroyFence(device, inFlightFence, nullptr);
-	vkDestroyCommandPool(device, commandPool, nullptr);
-	for (auto framebuffer : swapChainFramebuffers)
-	{
-		vkDestroyFramebuffer(device, framebuffer, nullptr);
-	}
-	vkDestroyPipeline(device, graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-	vkDestroyRenderPass(device, renderPass, nullptr);
-	for (auto imageView : swapChainImageViews)
-	{
-		vkDestroyImageView(device, imageView, nullptr);
-	}
-	vkDestroySwapchainKHR(device, swapChain, nullptr);
-	vkDestroyDevice(device, nullptr);
-	vkDestroySurfaceKHR(instance, surface, nullptr);
-	vkDestroyInstance(instance, nullptr);
-	glfwDestroyWindow(window);
-	glfwTerminate();
+    for (auto &&[imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence] :
+         std::views::zip(imageAvailableSemaphores, renderFinishedSemaphores, inFlightFences))
+    {
+        vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+        vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+        vkDestroyFence(device, inFlightFence, nullptr);
+    }
+    vkDestroyCommandPool(device, commandPool, nullptr);
+    for (auto framebuffer : swapChainFramebuffers)
+    {
+        vkDestroyFramebuffer(device, framebuffer, nullptr);
+    }
+    vkDestroyPipeline(device, graphicsPipeline, nullptr);
+    vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+    vkDestroyRenderPass(device, renderPass, nullptr);
+    for (auto imageView : swapChainImageViews)
+    {
+        vkDestroyImageView(device, imageView, nullptr);
+    }
+    vkDestroySwapchainKHR(device, swapChain, nullptr);
+    vkDestroyDevice(device, nullptr);
+    vkDestroySurfaceKHR(instance, surface, nullptr);
+    vkDestroyInstance(instance, nullptr);
+    glfwDestroyWindow(window);
+    glfwTerminate();
 }

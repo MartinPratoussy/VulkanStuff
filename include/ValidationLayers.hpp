@@ -5,8 +5,8 @@
 
 namespace ValidationLayers
 {
-	extern const std::vector<const char*> validationLayers;
-	extern const bool enableValidationLayers;
+    extern const std::vector<const char *> validationLayers;
+    extern const bool enableValidationLayers;
 
-	bool checkValidationLayerSupport();
-}
+    bool checkValidationLayerSupport();
+} // namespace ValidationLayers

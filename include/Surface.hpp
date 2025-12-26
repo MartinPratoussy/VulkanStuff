@@ -9,5 +9,5 @@
 
 namespace Surface
 {
-	void createSurface(VkInstance instance, GLFWwindow* window, VkSurfaceKHR* surface);
+    void createSurface(VkInstance instance, GLFWwindow *window, VkSurfaceKHR *surface);
 }

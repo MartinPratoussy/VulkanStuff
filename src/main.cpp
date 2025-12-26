@@ -4,16 +4,17 @@
 
 #include "TriangleApp.hpp"
 
-int main() {
-	TriangleApp app;
+int main()
+{
+    TriangleApp app;
 
     try
     {
-		app.run();
+        app.run();
     }
-    catch (const std::exception& e)
+    catch (const std::exception &e)
     {
-		std::println("{}", e.what());
+        std::println("{}", e.what());
         return EXIT_FAILURE;
     }
 
