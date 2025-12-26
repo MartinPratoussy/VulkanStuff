@@ -50,4 +50,6 @@ class TriangleApp
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     std::uint32_t currentFrame = 0;
+    VkVertexBuffer vertexBuffer = VK_NULL_HANDLE;
+    VkVertexBufferMemory vertexBufferMemory = VK_NULL_HANDLE;
 };

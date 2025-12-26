@@ -2,6 +2,7 @@
 #include <stdexcept>
 
 #include "GraphicsPipeline.hpp"
+#include "Vertex.hpp"
 #include "helper.hpp"
 
 #include "FrameSize.hpp"
@@ -60,10 +61,16 @@ void GraphicsPipeline::createGraphicsPipeline(
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = nullptr;
-    vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+
+    auto bindingDescription = Vertex::Vertex::getBindingDescription();
+    auto attributeDescriptions = Vertex::Vertex::getAttributeDescriptions();
+
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(
+        attributeDescriptions.size()
+    );
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

@@ -66,6 +66,9 @@ void TriangleApp::initVulkan()
     );
 
     Command::createCommandPool(device, physicalDevice, surface, commandPool);
+
+    Vertex::createVertexBuffer(device, vertexBuffer);
+
     Command::createCommandBuffers(device, commandPool, commandBuffers, MAX_FRAMES_IN_FLIGHT);
 
     Synchronization::createSyncObjects(
@@ -209,6 +212,9 @@ void TriangleApp::cleanupSwapChain()
 void TriangleApp::cleanup()
 {
     cleanupSwapChain();
+
+    vkDestroyBuffer(device, vertexBuffer, nullptr);
+    vkFreeMemory(device, vertexBufferMemory, nullptr);
 
     vkDestroyPipeline(device, graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(device, pipelineLayout, nullptr);

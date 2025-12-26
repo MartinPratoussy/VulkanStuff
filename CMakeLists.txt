@@ -64,6 +64,17 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 # Link libraries (use imported target for Vulkan)
 target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
 
+include(FetchContent)
+
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 0af55ccecd98d4e5a8d1fad7de25ba429d60e863 #refs/tags/1.0.1
+)
+
+FetchContent_MakeAvailable(glm)
+target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
+
 # Put runtime binary in a predictable place
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
