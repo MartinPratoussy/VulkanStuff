@@ -5,15 +5,20 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
+#include <vulkan/vulkan_core.h>
+
 #include <cstdint>
 #include <vector>
 
 constexpr std::uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 
+static void frameBufferResizeCallback(GLFWwindow *window, int width, int height);
+
 class TriangleApp
 {
   public:
     void run();
+    bool framebufferResized = false;
 
   private:
     void initWindow();
@@ -21,6 +26,7 @@ class TriangleApp
     void mainLoop();
     void drawFrame();
     void recreateSwapChain();
+    void cleanupSwapChain();
     void cleanup();
 
     GLFWwindow *window = nullptr;
