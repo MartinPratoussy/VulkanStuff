@@ -7,7 +7,7 @@
 
 namespace Instance
 {
-    void Instance::createInstance(VkInstance &instance)
+    void createInstance(VkInstance &instance)
     {
         if (ValidationLayers::enableValidationLayers
             && !ValidationLayers::checkValidationLayerSupport())

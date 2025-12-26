@@ -13,6 +13,7 @@
 #include "Surface.hpp"
 #include "SwapChain.hpp"
 #include "Synchronisation.hpp"
+#include "Vertex.hpp"
 
 void TriangleApp::run()
 {
@@ -67,7 +68,7 @@ void TriangleApp::initVulkan()
 
     Command::createCommandPool(device, physicalDevice, surface, commandPool);
 
-    Vertex::createVertexBuffer(device, vertexBuffer);
+    Vertex::createVertexBuffer(device, physicalDevice, vertexBuffer, vertexBufferMemory);
 
     Command::createCommandBuffers(device, commandPool, commandBuffers, MAX_FRAMES_IN_FLIGHT);
 
@@ -123,7 +124,8 @@ void TriangleApp::drawFrame()
         renderPass,
         swapChainFramebuffers[imageIndex],
         swapChainExtent,
-        graphicsPipeline
+        graphicsPipeline,
+        vertexBuffer
     );
 
     VkSubmitInfo submitInfo{};

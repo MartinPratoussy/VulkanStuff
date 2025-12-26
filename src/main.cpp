@@ -1,6 +1,5 @@
-#pragma once
-
-#include <print>
+#include <format>
+#include <iostream>
 
 #include "TriangleApp.hpp"
 
@@ -14,7 +13,7 @@ int main()
     }
     catch (const std::exception &e)
     {
-        std::println("{}", e.what());
+        std::cout << std::format("{}", e.what()) << std::endl;
         return EXIT_FAILURE;
     }
 

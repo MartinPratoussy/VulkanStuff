@@ -2,8 +2,10 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
+#endif
 
 #include <vulkan/vulkan_core.h>
 
@@ -50,6 +52,6 @@ class TriangleApp
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     std::uint32_t currentFrame = 0;
-    VkVertexBuffer vertexBuffer = VK_NULL_HANDLE;
-    VkVertexBufferMemory vertexBufferMemory = VK_NULL_HANDLE;
+    VkBuffer vertexBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
 };

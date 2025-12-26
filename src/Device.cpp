@@ -7,7 +7,6 @@
 #include <stdexcept>
 #include <vector>
 
-
 namespace Device
 {
     const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
@@ -45,7 +44,7 @@ namespace Device
         }
     }
 
-    std::uint32_t Device::rateDevice(VkPhysicalDevice device, VkSurfaceKHR surface)
+    std::uint32_t rateDevice(VkPhysicalDevice device, VkSurfaceKHR surface)
     {
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(device, &deviceProperties);

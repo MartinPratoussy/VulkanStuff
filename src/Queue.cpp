@@ -6,7 +6,7 @@
 
 namespace Queue
 {
-    FamilyIndices Queue::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
+    FamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
     {
         FamilyIndices indices;
 

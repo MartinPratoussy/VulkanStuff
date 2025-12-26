@@ -1,5 +1,8 @@
 #include "ValidationLayers.hpp"
 
+#include <cstdint>
+#include <cstring>
+
 namespace ValidationLayers
 {
     const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};

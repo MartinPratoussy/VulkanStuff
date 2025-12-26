@@ -1,6 +1,8 @@
 #include "Command.hpp"
 #include "Queue.hpp"
+#include "Vertex.hpp"
 #include <stdexcept>
+#include <vulkan/vulkan_core.h>
 
 void Command::createCommandPool(
     VkDevice &device,
@@ -48,7 +50,8 @@ void Command::recordCommandBuffer(
     VkRenderPass &renderPass,
     VkFramebuffer &framebuffer,
     VkExtent2D &extent,
-    VkPipeline &graphicsPipeline
+    VkPipeline &graphicsPipeline,
+    VkBuffer &vertexBuffer
 )
 {
     VkCommandBufferBeginInfo beginInfo{};
@@ -92,7 +95,13 @@ void Command::recordCommandBuffer(
 
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+    VkBuffer vertexBuffers[] = {vertexBuffer};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+    vkCmdDraw(commandBuffer, static_cast<std::uint32_t>(Vertex::vertices.size()), 1, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 

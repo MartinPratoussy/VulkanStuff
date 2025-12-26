@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <stdexcept>
+#include <limits>
 
 #include "FrameSize.hpp"
 #include "Queue.hpp"

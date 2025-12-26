@@ -1,6 +1,7 @@
 #include "Vertex.hpp"
 
-#include <memory>
+#include <cstdint>
+#include <cstring>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 
@@ -9,8 +10,8 @@ namespace Vertex
     void createVertexBuffer(
         VkDevice &device,
         VkPhysicalDevice &physicalDevice,
-        VkVertexBuffer &vertexBuffer,
-        VkVertexBufferMemory &vertexBufferMemory
+        VkBuffer &vertexBuffer,
+        VkDeviceMemory &vertexBufferMemory
     )
     {
         VkBufferCreateInfo bufferInfo{};
@@ -36,18 +37,20 @@ namespace Vertex
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
         );
 
-        if (vkAllocateMemory(device, allocInfo, nullptr, vertexBufferMemory) != VK_SUCCESS)
+        if (vkAllocateMemory(device, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to allocate vertex buffer memory!");
         }
 
         vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
 
-        std::unique_ptr<void> data;
-        vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, data);
+        void *data;
+        vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+        memcpy(data, vertices.data(), (size_t)bufferInfo.size);
+        vkUnmapMemory(device, vertexBufferMemory);
     }
 
-    std::uin32_t findMemoryType(
+    std::uint32_t findMemoryType(
         VkPhysicalDevice &physicalDevice, std::uint32_t typeFilter, VkMemoryPropertyFlags properties
     )
     {
