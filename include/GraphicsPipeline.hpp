@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <vector>
 #include <vulkan/vulkan.h>
 
@@ -14,7 +13,8 @@ namespace GraphicsPipeline
         VkExtent2D &swapChainExtent,
         VkPipelineLayout &pipelineLayout,
         VkPipeline &graphicsPipeline,
-        VkRenderPass &renderPass
+        VkRenderPass &renderPass,
+        VkDescriptorSetLayout &descriptorSetLayout
     );
     VkShaderModule createShaderModule(VkDevice &device, const std::vector<std::byte> &code);
     void createRenderPass(VkDevice &device, VkRenderPass &renderPass);

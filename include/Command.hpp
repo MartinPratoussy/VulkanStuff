@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <vector>
 #include <vulkan/vulkan.h>
 
@@ -25,7 +26,10 @@ namespace Command
         VkFramebuffer &framebuffer,
         VkExtent2D &extent,
         VkPipeline &graphicsPipeline,
+        VkPipelineLayout &pipelineLayout,
         VkBuffer &vertexBuffer,
-        VkBuffer &indexBuffer
+        VkBuffer &indexBuffer,
+        std::vector<VkDescriptorSet> &descriptorSets,
+        std::uint32_t currentFrame
     );
 } // namespace Command

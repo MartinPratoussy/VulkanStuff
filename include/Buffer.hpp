@@ -1,5 +1,6 @@
 #pragma once
 
+#include "glm/ext/matrix_float4x4.hpp"
 #include <array>
 #include <glm/glm.hpp>
 #include <vector>
@@ -11,6 +12,13 @@ namespace Buffer
     {
         glm::vec2 pos;
         glm::vec3 color;
+
+        struct UniformBufferObject
+        {
+            glm::mat4 model;
+            glm::mat4 view;
+            glm::mat4 proj;
+        };
 
         static VkVertexInputBindingDescription getBindingDescription()
         {
@@ -59,8 +67,8 @@ namespace Buffer
     void createIndexBuffer(
         VkDevice &device,
         VkPhysicalDevice &physicalDevice,
-        VkBuffer &vertexBuffer,
-        VkDeviceMemory &vertexBufferMemory,
+        VkBuffer &indexBuffer,
+        VkDeviceMemory &indexBufferMemory,
         VkCommandPool &commandPool,
         VkQueue &graphicsQueue
     );
@@ -88,4 +96,23 @@ namespace Buffer
         VkPhysicalDevice &physicalDevice, std::uint32_t typeFilter, VkMemoryPropertyFlags properties
     );
 
+    void createDescriptorSetLayout(VkDevice &device, VkDescriptorSetLayout &descriptorLayout);
+
+    void createUniformBuffers(
+        VkDevice &device,
+        VkPhysicalDevice &physicalDevice,
+        std::vector<VkBuffer> &uniformBuffers,
+        std::vector<VkDeviceMemory> &uniformBuffersMemory,
+        std::vector<void *> &uniformBuffersMapped
+    );
+
+    void createDescriptorPool(VkDevice &device, VkDescriptorPool &descriptorPool);
+
+    void createDescriptorSets(
+        VkDevice &device,
+        VkDescriptorPool &descriptorPool,
+        std::vector<VkDescriptorSet> &descriptorSets,
+        VkDescriptorSetLayout &descriptorSetLayout,
+        std::vector<VkBuffer> &uniformBuffers
+    );
 } // namespace Buffer

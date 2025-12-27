@@ -1,7 +1,20 @@
 #include "TriangleApp.hpp"
+#include "glm/ext/matrix_clip_space.hpp"
+#include "glm/ext/matrix_float4x4.hpp"
+#include "glm/ext/matrix_transform.hpp"
+#include "glm/ext/vector_float3.hpp"
+#include "glm/trigonometric.hpp"
+#include <cstring>
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <chrono>
+#include <cstddef>
 #include <ranges>
 #include <stdexcept>
+#include <vulkan/vulkan_core.h>
 
 #include "Buffer.hpp"
 #include "Command.hpp"
@@ -58,8 +71,11 @@ void TriangleApp::initVulkan()
         createImageViews(device, swapChainImages, VK_FORMAT_B8G8R8A8_SRGB, swapChainImageViews);
 
     GraphicsPipeline::createRenderPass(device, renderPass);
+
+    Buffer::createDescriptorSetLayout(device, descriptorSetLayout);
+
     GraphicsPipeline::createGraphicsPipeline(
-        device, swapChainExtent, pipelineLayout, graphicsPipeline, renderPass
+        device, swapChainExtent, pipelineLayout, graphicsPipeline, renderPass, descriptorSetLayout
     );
 
     Framebuffer::createFramebuffers(
@@ -71,8 +87,17 @@ void TriangleApp::initVulkan()
     Buffer::createVertexBuffer(
         device, physicalDevice, vertexBuffer, vertexBufferMemory, commandPool, graphicsQueue
     );
+
     Buffer::createIndexBuffer(
         device, physicalDevice, indexBuffer, indexBufferMemory, commandPool, graphicsQueue
+    );
+
+    Buffer::createUniformBuffers(
+        device, physicalDevice, uniformBuffers, uniformBuffersMemory, uniformBuffersMapped
+    );
+    Buffer::createDescriptorPool(device, descriptorPool);
+    Buffer::createDescriptorSets(
+        device, descriptorPool, descriptorSets, descriptorSetLayout, uniformBuffers
     );
 
     Command::createCommandBuffers(device, commandPool, commandBuffers, MAX_FRAMES_IN_FLIGHT);
@@ -123,6 +148,8 @@ void TriangleApp::drawFrame()
 
     vkResetFences(device, 1, &inFlightFences[currentFrame]);
 
+    updateUniformBuffer(currentFrame);
+
     vkResetCommandBuffer(commandBuffers[currentFrame], 0);
     Command::recordCommandBuffer(
         commandBuffers[currentFrame],
@@ -130,8 +157,11 @@ void TriangleApp::drawFrame()
         swapChainFramebuffers[imageIndex],
         swapChainExtent,
         graphicsPipeline,
+        pipelineLayout,
         vertexBuffer,
-        indexBuffer
+        indexBuffer,
+        descriptorSets,
+        currentFrame
     );
 
     VkSubmitInfo submitInfo{};
@@ -180,6 +210,29 @@ void TriangleApp::drawFrame()
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
+void TriangleApp::updateUniformBuffer(std::uint32_t currentImage)
+{
+    static auto startTime = std::chrono::high_resolution_clock::now();
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime)
+                     .count();
+
+    Buffer::Vertex::UniformBufferObject ubo{};
+    ubo.model = glm::
+        rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    ubo.view = glm::lookAt(
+        glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)
+    );
+    ubo.proj = glm::perspective(
+        glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f
+    );
+    ubo.proj[1][1] *= -1;
+
+    memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+}
+
 void TriangleApp::recreateSwapChain()
 {
     int width = 0, height = 0;
@@ -220,6 +273,16 @@ void TriangleApp::cleanupSwapChain()
 void TriangleApp::cleanup()
 {
     cleanupSwapChain();
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroyBuffer(device, uniformBuffers[i], nullptr);
+        vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
+    }
+
+    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+
+    vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 
     vkDestroyBuffer(device, indexBuffer, nullptr);
     vkFreeMemory(device, indexBufferMemory, nullptr);

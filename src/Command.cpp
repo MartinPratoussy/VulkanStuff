@@ -51,8 +51,11 @@ void Command::recordCommandBuffer(
     VkFramebuffer &framebuffer,
     VkExtent2D &extent,
     VkPipeline &graphicsPipeline,
+    VkPipelineLayout &pipelineLayout,
     VkBuffer &vertexBuffer,
-    VkBuffer &indexBuffer
+    VkBuffer &indexBuffer,
+    std::vector<VkDescriptorSet> &descriptorSets,
+    std::uint32_t currentFrame
 )
 {
     VkCommandBufferBeginInfo beginInfo{};
@@ -102,6 +105,17 @@ void Command::recordCommandBuffer(
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+    vkCmdBindDescriptorSets(
+        commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        pipelineLayout,
+        0,
+        1,
+        &descriptorSets[currentFrame],
+        0,
+        nullptr
+    );
 
     vkCmdDrawIndexed(commandBuffer, static_cast<std::uint32_t>(Buffer::indices.size()), 1, 0, 0, 0);
 

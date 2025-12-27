@@ -27,6 +27,7 @@ class TriangleApp
     void initVulkan();
     void mainLoop();
     void drawFrame();
+    void updateUniformBuffer(std::uint32_t currentImage);
     void recreateSwapChain();
     void cleanupSwapChain();
     void cleanup();
@@ -42,6 +43,7 @@ class TriangleApp
     VkExtent2D swapChainExtent = {};
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
+    VkDescriptorSetLayout descriptorSetLayout;
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     VkRenderPass renderPass = VK_NULL_HANDLE;
     VkPipeline graphicsPipeline = VK_NULL_HANDLE;
@@ -56,4 +58,9 @@ class TriangleApp
     VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
     VkBuffer indexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VkDeviceMemory> uniformBuffersMemory;
+    std::vector<void *> uniformBuffersMapped;
+    VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
+    std::vector<VkDescriptorSet> descriptorSets;
 };
