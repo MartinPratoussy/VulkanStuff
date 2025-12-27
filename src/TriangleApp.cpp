@@ -7,6 +7,7 @@
 #include <cstring>
 
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -273,6 +274,9 @@ void TriangleApp::cleanupSwapChain()
 void TriangleApp::cleanup()
 {
     cleanupSwapChain();
+
+    vkDestroyImage(device, textureImage, nullptr);
+    vkFreeMemory(device, textureImageMemory, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {

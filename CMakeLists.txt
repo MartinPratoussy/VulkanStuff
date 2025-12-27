@@ -75,6 +75,16 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glm)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
 
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG master
+)
+
+FetchContent_MakeAvailable(stb)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${stb_SOURCE_DIR})
+
 # Put runtime binary in a predictable place
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin

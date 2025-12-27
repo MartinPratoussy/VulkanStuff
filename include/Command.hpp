@@ -32,4 +32,13 @@ namespace Command
         std::vector<VkDescriptorSet> &descriptorSets,
         std::uint32_t currentFrame
     );
+
+    VkCommandBuffer beginSingleTimeCommands(VkDevice &device, VkCommandPool &commandPool);
+
+    void endSingleTimeCommands(
+        VkDevice &device,
+        VkCommandPool &commandPool,
+        VkCommandBuffer commandBuffer,
+        VkQueue &graphicsQueue
+    );
 } // namespace Command

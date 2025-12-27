@@ -63,4 +63,6 @@ class TriangleApp
     std::vector<void *> uniformBuffersMapped;
     VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
     std::vector<VkDescriptorSet> descriptorSets;
+    VkImage textureImage;
+    VkDeviceMemory textureImageMemory;
 };
