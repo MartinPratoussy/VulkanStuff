@@ -7,75 +7,123 @@ This project demonstrates core Vulkan concepts including surface creation, swap 
 ## Platform Support
 
 - **Windows** (MSVC x64) ✅ Tested
-- **Linux** (GCC/Clang) ⚠️ Not tested
+- **Linux** (GCC/Clang) ✅ Tested
 - **macOS** (Clang) ⚠️ Supported (requires Metal support)
 
 ## Project Structure
 
 ```
-VulkanTuto/
-├── src/                    # Source files
-│   ├── main.cpp           # Application entry point
-│   ├── TriangleApp.cpp    # Main application logic
-│   ├── Instance.cpp       # Vulkan instance creation
-│   ├── Device.cpp         # Physical/logical device selection
-│   ├── Surface.cpp        # Window surface creation
-│   ├── SwapChain.cpp      # Swap chain management
-│   ├── GraphicsPipeline.cpp # Pipeline creation
-│   ├── Framebuffer.cpp    # Framebuffer setup
-│   ├── Command.cpp        # Command buffer recording
-│   ├── Queue.cpp          # Queue management
-│   ├── Synchronisation.cpp # Synchronization primitives
-│   └── ValidationLayers.cpp # Debug validation
-├── include/               # Header files (corresponding to src/)
-├── shaders/               # GLSL shader sources
-│   ├── shader.vert        # Vertex shader
-│   └── shader.frag        # Fragment shader
-├── CMakeLists.txt         # Build configuration
-└── README.md             # This file
+VulkanStuff/
+├── src/                           # Source implementation files
+│   ├── main.cpp                   # Application entry point
+│   ├── TriangleApp.cpp            # Main application logic & render loop
+│   ├── Instance.cpp               # Vulkan instance creation
+│   ├── Device.cpp                 # Physical/logical device selection
+│   ├── Surface.cpp                # Window surface creation
+│   ├── SwapChain.cpp              # Swap chain management
+│   ├── ImageViews.cpp             # Image view creation
+│   ├── GraphicsPipeline.cpp       # Graphics pipeline creation
+│   ├── Framebuffer.cpp            # Framebuffer setup
+│   ├── Command.cpp                # Command buffer recording
+│   ├── Queue.cpp                  # Queue management
+│   ├── Buffer.cpp                 # Vertex/index buffer management
+│   ├── Synchronisation.cpp        # Synchronization (semaphores, fences)
+│   └── ValidationLayers.cpp       # Debug validation layer setup
+├── include/                       # Header files
+│   ├── TriangleApp.hpp            # Main application header
+│   ├── Instance.hpp               # Instance management
+│   ├── Device.hpp                 # Device management
+│   ├── Surface.hpp                # Surface management
+│   ├── SwapChain.hpp              # Swap chain management
+│   ├── ImageViews.hpp             # Image view management
+│   ├── GraphicsPipeline.hpp       # Graphics pipeline
+│   ├── Framebuffer.hpp            # Framebuffer management
+│   ├── Command.hpp                # Command buffer management
+│   ├── Queue.hpp                  # Queue management
+│   ├── Buffer.hpp                 # Buffer management
+│   ├── Synchronisation.hpp        # Synchronization primitives
+│   ├── ValidationLayers.hpp       # Validation layer handling
+│   ├── FrameSize.hpp              # Frame size constants
+│   └── helper.hpp                 # Utility functions
+├── shaders/                       # GLSL shader sources
+│   ├── shader.vert                # Vertex shader
+│   └── shader.frag                # Fragment shader
+├── build/                         # Build directory (generated)
+│   ├── bin/                       # Compiled executable
+│   │   └── VulkanTuto             # Main application binary
+│   ├── shaders/                   # Compiled SPIR-V shaders
+│   │   ├── shader.vert.spv        # Compiled vertex shader
+│   │   └── shader.frag.spv        # Compiled fragment shader
+│   ├── CMakeFiles/                # CMake generated files
+│   └── compile_commands.json      # Compilation database
+├── CMakeLists.txt                 # Build configuration
+└── README.md                      # This file
 ```
 
 ## Dependencies
 
+### Required
+- **Vulkan SDK** (latest) - Graphics API
+- **CMake** (3.10+) - Build system
+- **C++ Compiler** (C++17 or later)
+  - Windows: MSVC, Clang, or MinGW
+  - Linux: GCC or Clang
+  - macOS: Clang
+
+### External Libraries
+- **GLFW3** (3.4+) - Window management
+- **glslc** (Vulkan SDK) - Shader compilation
+- **GLM** (0.9.9+) - Math library (automatically fetched by CMake)
+
 ### Windows
 - **Vulkan SDK** (latest)
-- **GLFW3** (3.4+) - Window management
+- **GLFW3** (3.4+)
   - Download from: https://www.glfw.org/download.html
   - Or use vcpkg: `vcpkg install glfw3:x64-windows`
 - **glslc** (Vulkan SDK) - Shader compilation
 
 ### Linux (Ubuntu/Debian)
 ```bash
-sudo apt-get install vulkan-tools libvulkan-dev libglfw3-dev glslc
+sudo apt-get install vulkan-tools libvulkan-dev libglfw3-dev glslc cmake build-essential
 ```
 
 ### Linux (Fedora/RHEL)
 ```bash
-sudo dnf install vulkan-tools vulkan-devel glfw-devel glslc
+sudo dnf install vulkan-tools vulkan-devel glfw-devel glslc cmake gcc-c++
 ```
 
 ### macOS
 ```bash
-brew install vulkan-loader glfw glslc
+brew install vulkan-loader glfw glslc cmake
 ```
 
 ## Building
 
+### Quick Start
+
+```bash
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake --build .
+./bin/VulkanTuto
+```
+
 ### Windows
 
 ```powershell
-mkdir build-win
-cd build-win
+mkdir build
+cd build
 cmake -G "Visual Studio 17 2022" ..
 cmake --build . --config Release
-./bin/Release/VulkanTuto.exe
+.\bin\Release\VulkanTuto.exe
 ```
 
 ### Linux
 
 ```bash
-mkdir build-linux
-cd build-linux
+mkdir build
+cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 cmake --build .
 ./bin/VulkanTuto
@@ -84,8 +132,8 @@ cmake --build .
 ### macOS
 
 ```bash
-mkdir build-macos
-cd build-macos
+mkdir build
+cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 cmake --build .
 ./bin/VulkanTuto
@@ -99,7 +147,12 @@ cmake --build .
 
 ```bash
 cmake -DCOMPILE_SHADERS=OFF ..
+cmake --build .
 ```
+
+- **CMAKE_BUILD_TYPE** 
+  - `Release` - Optimized production build
+  - `Debug` - Development build with debug symbols
 
 ## Configuration
 
