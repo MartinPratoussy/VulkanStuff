@@ -1,4 +1,6 @@
 #include "TriangleApp.hpp"
+#include "Image.hpp"
+#include "Texture.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
@@ -13,7 +15,6 @@
 
 #include <chrono>
 #include <cstddef>
-#include <ranges>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 
@@ -85,6 +86,14 @@ void TriangleApp::initVulkan()
 
     Command::createCommandPool(device, physicalDevice, surface, commandPool);
 
+    Image::createTextureImage(
+        device, physicalDevice, textureImage, textureImageMemory, commandPool, graphicsQueue
+    );
+
+    ImageViews::createTextureImageView(device, textureImage, textureImageView);
+
+    Texture::createTextureSampler(device, physicalDevice, textureSampler);
+
     Buffer::createVertexBuffer(
         device, physicalDevice, vertexBuffer, vertexBufferMemory, commandPool, graphicsQueue
     );
@@ -98,7 +107,13 @@ void TriangleApp::initVulkan()
     );
     Buffer::createDescriptorPool(device, descriptorPool);
     Buffer::createDescriptorSets(
-        device, descriptorPool, descriptorSets, descriptorSetLayout, uniformBuffers
+        device,
+        descriptorPool,
+        descriptorSets,
+        descriptorSetLayout,
+        uniformBuffers,
+        textureImageView,
+        textureSampler
     );
 
     Command::createCommandBuffers(device, commandPool, commandBuffers, MAX_FRAMES_IN_FLIGHT);
@@ -108,6 +123,7 @@ void TriangleApp::initVulkan()
         imageAvailableSemaphores,
         renderFinishedSemaphores,
         inFlightFences,
+        swapChainImages.size(),
         MAX_FRAMES_IN_FLIGHT
     );
 }
@@ -176,7 +192,7 @@ void TriangleApp::drawFrame()
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
 
-    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[imageIndex]};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -248,6 +264,11 @@ void TriangleApp::recreateSwapChain()
 
     cleanupSwapChain();
 
+    swapChain = VK_NULL_HANDLE;
+    swapChainImages.clear();
+    swapChainImageViews.clear();
+    swapChainFramebuffers.clear();
+
     SwapChain::createSwapChain(
         physicalDevice, device, surface, swapChain, swapChainImages, swapChainExtent
     );
@@ -255,6 +276,16 @@ void TriangleApp::recreateSwapChain()
         createImageViews(device, swapChainImages, VK_FORMAT_B8G8R8A8_SRGB, swapChainImageViews);
     Framebuffer::createFramebuffers(
         device, renderPass, swapChainImageViews, swapChainExtent, swapChainFramebuffers
+    );
+
+    // Recreate semaphores for the new swapchain images
+    Synchronization::createSyncObjects(
+        device,
+        imageAvailableSemaphores,
+        renderFinishedSemaphores,
+        inFlightFences,
+        swapChainImages.size(),
+        MAX_FRAMES_IN_FLIGHT
     );
 }
 
@@ -269,17 +300,29 @@ void TriangleApp::cleanupSwapChain()
         vkDestroyImageView(device, imageView, nullptr);
     }
     vkDestroySwapchainKHR(device, swapChain, nullptr);
+
+    // Cleanup renderFinished semaphores (indexed by swapchain image)
+    for (auto semaphore : renderFinishedSemaphores)
+    {
+        vkDestroySemaphore(device, semaphore, nullptr);
+    }
+    renderFinishedSemaphores.clear();
 }
 
 void TriangleApp::cleanup()
 {
     cleanupSwapChain();
 
+    vkDestroySampler(device, textureSampler, nullptr);
+
+    vkDestroyImageView(device, textureImageView, nullptr);
+
     vkDestroyImage(device, textureImage, nullptr);
     vkFreeMemory(device, textureImageMemory, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
+        vkUnmapMemory(device, uniformBuffersMemory[i]);
         vkDestroyBuffer(device, uniformBuffers[i], nullptr);
         vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
     }
@@ -299,12 +342,14 @@ void TriangleApp::cleanup()
 
     vkDestroyRenderPass(device, renderPass, nullptr);
 
-    for (auto &&[imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence] :
-         std::views::zip(imageAvailableSemaphores, renderFinishedSemaphores, inFlightFences))
+    // Destroy imageAvailable semaphores (indexed by frame) and fences
+    for (auto semaphore : imageAvailableSemaphores)
     {
-        vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
-        vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
-        vkDestroyFence(device, inFlightFence, nullptr);
+        vkDestroySemaphore(device, semaphore, nullptr);
+    }
+    for (auto fence : inFlightFences)
+    {
+        vkDestroyFence(device, fence, nullptr);
     }
 
     vkDestroyCommandPool(device, commandPool, nullptr);

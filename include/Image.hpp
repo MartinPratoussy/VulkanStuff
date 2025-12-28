@@ -1,9 +1,7 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
-#define STB_IMAGE_IMPLEMENTATION
 #include <cstdint>
-#include <stb_image.h>
+#include <vulkan/vulkan_core.h>
 
 namespace Image
 {

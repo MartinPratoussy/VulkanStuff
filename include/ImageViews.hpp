@@ -5,10 +5,15 @@
 
 namespace ImageViews
 {
+    VkImageView createImageView(VkDevice &device, VkImage &textureImage, VkFormat format);
+
+    void
+    createTextureImageView(VkDevice &device, VkImage &textureImage, VkImageView &textureImageView);
+
     void createImageViews(
         VkDevice &device,
-        const std::vector<VkImage> &swapChainImages,
+        std::vector<VkImage> &swapChainImages,
         VkFormat swapChainImageFormat,
         std::vector<VkImageView> &swapChainImageViews
     );
-}
+} // namespace ImageViews

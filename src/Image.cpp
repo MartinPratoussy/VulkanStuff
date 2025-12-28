@@ -7,6 +7,9 @@
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 namespace Image
 {
     void createTextureImage(
@@ -142,6 +145,7 @@ namespace Image
 
         if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
         {
+            vkDestroyImage(device, image, nullptr);
             throw std::runtime_error("failed to allocate image memory!");
         }
 
@@ -159,8 +163,6 @@ namespace Image
     )
     {
         VkCommandBuffer commandBuffer = Command::beginSingleTimeCommands(device, commandPool);
-
-        Command::endSingleTimeCommands(device, commandPool, commandBuffer, graphicsQueue);
 
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -204,6 +206,8 @@ namespace Image
         vkCmdPipelineBarrier(
             commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier
         );
+
+        Command::endSingleTimeCommands(device, commandPool, commandBuffer, graphicsQueue);
     }
 
     void copyBufferToImage(
@@ -217,8 +221,6 @@ namespace Image
     )
     {
         VkCommandBuffer commandBuffer = Command::beginSingleTimeCommands(device, commandPool);
-
-        Command::endSingleTimeCommands(device, commandPool, commandBuffer, graphicsQueue);
 
         VkBufferImageCopy region{};
         region.bufferOffset = 0;
@@ -234,6 +236,8 @@ namespace Image
         vkCmdCopyBufferToImage(
             commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region
         );
+
+        Command::endSingleTimeCommands(device, commandPool, commandBuffer, graphicsQueue);
     }
 
 } // namespace Image

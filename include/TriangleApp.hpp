@@ -50,8 +50,8 @@ class TriangleApp
     std::vector<VkFramebuffer> swapChainFramebuffers;
     VkCommandPool commandPool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> commandBuffers;
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkSemaphore> imageAvailableSemaphores;      // per frame in flight
+    std::vector<VkSemaphore> renderFinishedSemaphores;     // per swapchain image
     std::vector<VkFence> inFlightFences;
     std::uint32_t currentFrame = 0;
     VkBuffer vertexBuffer = VK_NULL_HANDLE;
@@ -63,6 +63,8 @@ class TriangleApp
     std::vector<void *> uniformBuffersMapped;
     VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
     std::vector<VkDescriptorSet> descriptorSets;
-    VkImage textureImage;
-    VkDeviceMemory textureImageMemory;
+    VkImage textureImage = VK_NULL_HANDLE;
+    VkDeviceMemory textureImageMemory = VK_NULL_HANDLE;
+    VkImageView textureImageView = VK_NULL_HANDLE;
+    VkSampler textureSampler = VK_NULL_HANDLE;
 };

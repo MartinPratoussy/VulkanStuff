@@ -38,7 +38,7 @@ namespace Command
     void endSingleTimeCommands(
         VkDevice &device,
         VkCommandPool &commandPool,
-        VkCommandBuffer commandBuffer,
+        VkCommandBuffer &commandBuffer,
         VkQueue &graphicsQueue
     );
 } // namespace Command

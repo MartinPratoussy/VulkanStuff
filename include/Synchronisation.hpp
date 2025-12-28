@@ -7,9 +7,10 @@ namespace Synchronization
 {
     void createSyncObjects(
         VkDevice &device,
-        std::vector<VkSemaphore> &imageAvailableSemaphores,
-        std::vector<VkSemaphore> &renderFinishedSemaphores,
+        std::vector<VkSemaphore> &imageAvailableSemaphores,      // per frame in flight
+        std::vector<VkSemaphore> &renderFinishedSemaphores,     // per swapchain image
         std::vector<VkFence> &inFlightFences,
+        std::size_t swapChainImageCount,
         std::size_t maxFramesInFlight
     );
 } // namespace Synchronization

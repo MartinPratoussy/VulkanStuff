@@ -150,7 +150,7 @@ VkCommandBuffer Command::beginSingleTimeCommands(VkDevice &device, VkCommandPool
 void Command::endSingleTimeCommands(
     VkDevice &device,
     VkCommandPool &commandPool,
-    VkCommandBuffer commandBuffer,
+    VkCommandBuffer &commandBuffer,
     VkQueue &graphicsQueue
 )
 {
