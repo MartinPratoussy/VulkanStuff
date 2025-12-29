@@ -24,6 +24,107 @@ constexpr std::uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 static void frameBufferResizeCallback(GLFWwindow *window, int width, int height);
 
 /**
+ * @struct VulkanCore
+ * @brief Core Vulkan objects required for rendering
+ * @details Groups the fundamental Vulkan objects that are created early and
+ *          used throughout the application's lifetime
+ */
+struct VulkanCore
+{
+    VkInstance instance = VK_NULL_HANDLE;             ///< Vulkan instance (connection to Vulkan)
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE; ///< Selected GPU
+    VkDevice device = VK_NULL_HANDLE;                 ///< Logical device (interface to GPU)
+    VkQueue graphicsQueue = VK_NULL_HANDLE;           ///< Queue for graphics commands
+    VkQueue presentQueue = VK_NULL_HANDLE;            ///< Queue for presentation
+    VkSurfaceKHR surface = VK_NULL_HANDLE;            ///< Window surface for rendering
+};
+
+/**
+ * @struct SwapchainResources
+ * @brief Swapchain and dependent resources that must be recreated on resize
+ * @details Groups all resources that depend on swapchain dimensions and must
+ *          be destroyed/recreated when the window is resized
+ */
+struct SwapchainResources
+{
+    VkSwapchainKHR swapChain = VK_NULL_HANDLE; ///< Swapchain (image presentation engine)
+    VkExtent2D extent = {};                    ///< Resolution of swapchain images
+    std::vector<VkImage> images;               ///< Swapchain images (owned by swapchain)
+    std::vector<VkImageView> imageViews;       ///< Image views for swapchain images
+    std::vector<VkFramebuffer> framebuffers;   ///< Framebuffers (one per swapchain image)
+};
+
+/**
+ * @struct PipelineResources
+ * @brief Graphics pipeline and related objects
+ * @details Groups the graphics pipeline and its dependencies
+ */
+struct PipelineResources
+{
+    VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE; ///< Layout for shader resources
+    VkPipelineLayout layout = VK_NULL_HANDLE; ///< Pipeline layout (uniforms, push constants)
+    VkRenderPass renderPass = VK_NULL_HANDLE; ///< Render pass (attachments and subpasses)
+    VkPipeline pipeline = VK_NULL_HANDLE;     ///< Graphics pipeline (shaders and state)
+};
+
+/**
+ * @struct BufferResources
+ * @brief Vertex, index, and uniform buffers with their backing memory
+ * @details Groups all buffer objects and their associated device memory
+ */
+struct BufferResources
+{
+    VkBuffer vertexBuffer = VK_NULL_HANDLE;       ///< GPU buffer for vertex data
+    VkDeviceMemory vertexMemory = VK_NULL_HANDLE; ///< Memory backing vertex buffer
+    VkBuffer indexBuffer = VK_NULL_HANDLE;        ///< GPU buffer for index data
+    VkDeviceMemory indexMemory = VK_NULL_HANDLE;  ///< Memory backing index buffer
+
+    std::vector<VkBuffer> uniformBuffers;      ///< Uniform buffers for transformation matrices
+    std::vector<VkDeviceMemory> uniformMemory; ///< Memory backing uniform buffers
+    std::vector<void *> uniformMapped;         ///< Persistently mapped pointers for updates
+};
+
+/**
+ * @struct TextureResources
+ * @brief Texture image, view, and sampler
+ * @details Groups all texture-related resources
+ */
+struct TextureResources
+{
+    VkImage image = VK_NULL_HANDLE;         ///< Texture image on GPU
+    VkDeviceMemory memory = VK_NULL_HANDLE; ///< Memory backing texture image
+    VkImageView view = VK_NULL_HANDLE;      ///< Image view for texture
+    VkSampler sampler = VK_NULL_HANDLE;     ///< Sampler (filtering and addressing)
+};
+
+/**
+ * @struct SyncResources
+ * @brief Synchronization primitives for frame coordination
+ * @details Groups semaphores and fences with proper documentation of indexing
+ */
+struct SyncResources
+{
+    /**
+     * Semaphores indexed by currentFrame (0 to MAX_FRAMES_IN_FLIGHT-1)
+     * Used for vkAcquireNextImageKHR to signal when image is available
+     */
+    std::vector<VkSemaphore> imageAvailable;
+
+    /**
+     * Semaphores indexed by imageIndex (0 to swapChainImages.size()-1)
+     * Used in vkQueueSubmit to signal when rendering is finished
+     * CRITICAL: Prevents reuse of semaphore before swapchain image is re-acquired
+     */
+    std::vector<VkSemaphore> renderFinished;
+
+    /**
+     * Fences indexed by currentFrame for CPU-GPU synchronization
+     * Ensures a frame slot isn't reused until GPU finishes with it
+     */
+    std::vector<VkFence> inFlight;
+};
+
+/**
  * @class TriangleApp
  * @brief Main Vulkan application managing rendering, resources, and synchronization
  * @details Implements a complete Vulkan rendering pipeline with:
@@ -101,82 +202,22 @@ class TriangleApp
      */
     void cleanup();
 
-    // === Vulkan Core Objects ===
+    // === Resource Groups ===
 
-    GLFWwindow *window = nullptr;                     ///< GLFW window handle
-    VkInstance instance = VK_NULL_HANDLE;             ///< Vulkan instance (connection to Vulkan)
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE; ///< Selected GPU
-    VkDevice device = VK_NULL_HANDLE;                 ///< Logical device (interface to GPU)
-    VkQueue graphicsQueue = VK_NULL_HANDLE;           ///< Queue for graphics commands
-    VkQueue presentQueue = VK_NULL_HANDLE;            ///< Queue for presentation
-    VkSurfaceKHR surface = VK_NULL_HANDLE;            ///< Window surface for rendering
+    GLFWwindow *window = nullptr; ///< GLFW window handle
 
-    // === Swapchain Resources ===
-
-    VkSwapchainKHR swapChain = VK_NULL_HANDLE;        ///< Swapchain (image presentation engine)
-    VkExtent2D swapChainExtent = {};                  ///< Resolution of swapchain images
-    std::vector<VkImage> swapChainImages;             ///< Swapchain images (owned by swapchain)
-    std::vector<VkImageView> swapChainImageViews;     ///< Image views for swapchain images
-    std::vector<VkFramebuffer> swapChainFramebuffers; ///< Framebuffers (one per swapchain image)
-
-    // === Graphics Pipeline ===
-
-    VkDescriptorSetLayout descriptorSetLayout; ///< Layout for shader resources
-    VkPipelineLayout
-        pipelineLayout = VK_NULL_HANDLE;          ///< Pipeline layout (uniforms, push constants)
-    VkRenderPass renderPass = VK_NULL_HANDLE;     ///< Render pass (attachments and subpasses)
-    VkPipeline graphicsPipeline = VK_NULL_HANDLE; ///< Graphics pipeline (shaders and state)
-
-    // === Command Buffers ===
+    VulkanCore vulkan;            ///< Core Vulkan objects (instance, device, queues)
+    SwapchainResources swapchain; ///< Swapchain and dependent resources
+    PipelineResources pipeline;   ///< Graphics pipeline and layout
+    BufferResources buffers;      ///< Vertex, index, and uniform buffers
+    TextureResources texture;     ///< Texture image, view, and sampler
+    SyncResources sync;           ///< Synchronization primitives
 
     VkCommandPool commandPool = VK_NULL_HANDLE;  ///< Command pool for allocating command buffers
     std::vector<VkCommandBuffer> commandBuffers; ///< Command buffers (one per frame in flight)
 
-    // === Synchronization Primitives ===
-
-    /**
-     * Semaphores indexed by currentFrame (0 to MAX_FRAMES_IN_FLIGHT-1)
-     * Used for vkAcquireNextImageKHR to signal when image is available
-     */
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-
-    /**
-     * Semaphores indexed by imageIndex (0 to swapChainImages.size()-1)
-     * Used in vkQueueSubmit to signal when rendering is finished
-     * CRITICAL: Prevents reuse of semaphore before swapchain image is re-acquired
-     */
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-
-    /**
-     * Fences indexed by currentFrame for CPU-GPU synchronization
-     * Ensures a frame slot isn't reused until GPU finishes with it
-     */
-    std::vector<VkFence> inFlightFences;
-
-    std::uint32_t currentFrame = 0; ///< Current frame index (wraps around)
-
-    // === Vertex Data ===
-
-    VkBuffer vertexBuffer = VK_NULL_HANDLE;             ///< GPU buffer for vertex data
-    VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE; ///< Memory backing vertex buffer
-    VkBuffer indexBuffer = VK_NULL_HANDLE;              ///< GPU buffer for index data
-    VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;  ///< Memory backing index buffer
-
-    // === Uniform Buffers (per frame in flight) ===
-
-    std::vector<VkBuffer> uniformBuffers; ///< Uniform buffers for transformation matrices
-    std::vector<VkDeviceMemory> uniformBuffersMemory; ///< Memory backing uniform buffers
-    std::vector<void *> uniformBuffersMapped;         ///< Persistently mapped pointers for updates
-
-    // === Descriptors ===
-
     VkDescriptorPool descriptorPool = VK_NULL_HANDLE; ///< Pool for allocating descriptor sets
     std::vector<VkDescriptorSet> descriptorSets; ///< Descriptor sets (bind resources to shaders)
 
-    // === Texture Resources ===
-
-    VkImage textureImage = VK_NULL_HANDLE;              ///< Texture image on GPU
-    VkDeviceMemory textureImageMemory = VK_NULL_HANDLE; ///< Memory backing texture image
-    VkImageView textureImageView = VK_NULL_HANDLE;      ///< Image view for texture
-    VkSampler textureSampler = VK_NULL_HANDLE;          ///< Sampler (filtering and addressing)
+    std::uint32_t currentFrame = 0; ///< Current frame index (wraps around)
 };
