@@ -16,7 +16,7 @@ This project demonstrates core Vulkan concepts including surface creation, swap 
 VulkanStuff/
 ├── src/                           # Source implementation files
 │   ├── main.cpp                   # Application entry point
-│   ├── TriangleApp.cpp            # Main application logic & render loop
+│   ├── TriangleApp.cpp            # Main app logic, grouped resource structs
 │   ├── Instance.cpp               # Vulkan instance creation
 │   ├── Device.cpp                 # Physical/logical device selection
 │   ├── Surface.cpp                # Window surface creation
@@ -26,12 +26,13 @@ VulkanStuff/
 │   ├── Framebuffer.cpp            # Framebuffer setup
 │   ├── Command.cpp                # Command buffer recording
 │   ├── Queue.cpp                  # Queue management
-│   ├── Buffer.cpp                 # Vertex/index buffer management
+│   ├── Buffer.cpp                 # Vertex/index/uniform buffer management
+│   ├── Texture.cpp                # Texture sampler creation (Image namespace)
 │   ├── Synchronisation.cpp        # Synchronization (semaphores, fences)
 │   └── ValidationLayers.cpp       # Debug validation layer setup
 ├── include/                       # Header files
 │   ├── TriangleApp.hpp            # Main application header
-│   ├── Instance.hpp               # Instance management
+│   ├── Instance.hpp               # Instance & surface management
 │   ├── Device.hpp                 # Device management
 │   ├── Surface.hpp                # Surface management
 │   ├── SwapChain.hpp              # Swap chain management
@@ -40,10 +41,12 @@ VulkanStuff/
 │   ├── Framebuffer.hpp            # Framebuffer management
 │   ├── Command.hpp                # Command buffer management
 │   ├── Queue.hpp                  # Queue management
-│   ├── Buffer.hpp                 # Buffer management
+│   ├── Buffer.hpp                 # Buffer management (Vertex & UBO structs)
+│   ├── RenderConstants.hpp        # Centralized camera/animation constants
+│   ├── VulkanHelpers.hpp          # VK_CHECK macro and helpers
 │   ├── Synchronisation.hpp        # Synchronization primitives
 │   ├── ValidationLayers.hpp       # Validation layer handling
-│   ├── FrameSize.hpp              # Frame size constants
+│   ├── FrameSize.hpp              # Frame size constants (legacy; use SwapChain defaults)
 │   └── helper.hpp                 # Utility functions
 ├── shaders/                       # GLSL shader sources
 │   ├── shader.vert                # Vertex shader
@@ -65,7 +68,7 @@ VulkanStuff/
 ### Required
 - **Vulkan SDK** (latest) - Graphics API
 - **CMake** (3.10+) - Build system
-- **C++ Compiler** (C++17 or later)
+- **C++ Compiler** (C++20)
   - Windows: MSVC, Clang, or MinGW
   - Linux: GCC or Clang
   - macOS: Clang
@@ -150,7 +153,7 @@ cmake -DCOMPILE_SHADERS=OFF ..
 cmake --build .
 ```
 
-- **CMAKE_BUILD_TYPE** 
+- **CMAKE_BUILD_TYPE**
   - `Release` - Optimized production build
   - `Debug` - Development build with debug symbols
 
@@ -170,13 +173,13 @@ Alternatively, use vcpkg for automatic dependency management.
 ## Core Components
 
 ### TriangleApp
-Main application class managing the rendering loop and Vulkan initialization.
+Manages the rendering loop and grouped resource structs for clarity.
 
 ### Instance & Device
-Creates Vulkan instance and selects appropriate GPU with queue families.
+Creates the Vulkan instance, window surface, and selects the GPU with queue families.
 
-### Surface & SwapChain
-Manages window surface and presents rendered frames to screen.
+### SwapChain
+Presents rendered frames to the screen. Surface creation lives under Instance.
 
 ### GraphicsPipeline
 Defines the graphics rendering pipeline with shaders and fixed-function stages.
@@ -189,6 +192,32 @@ Records and submits rendering commands to the GPU.
 
 ### Synchronisation
 Handles semaphores and fences for frame synchronization.
+
+## Synchronization Model
+
+- **Frames in flight**: Uses `MAX_FRAMES_IN_FLIGHT = 2` fences to pace CPU/GPU.
+- **Acquire**: One `imageAvailable` semaphore per frame-in-flight.
+- **Present**: One `renderFinished` semaphore per swapchain image to avoid reuse.
+- **Outcome**: Eliminates semaphore reuse validation errors and restores smooth animation.
+
+## Documentation
+
+- **Doxygen comments**: Headers and key sources include Doxygen-style documentation.
+- **Generate docs**:
+  - Install `doxygen` (Linux: `sudo apt install doxygen graphviz`).
+  - From the repo root, run: `doxygen -g Doxyfile`.
+  - Set `INPUT = include src` and `OUTPUT_DIRECTORY = build/docs` in `Doxyfile`.
+  - Generate: `doxygen Doxyfile` and open `build/docs/html/index.html`.
+
+## Helper Files
+
+- **RenderConstants.hpp**: Centralized camera/animation constants.
+- **VulkanHelpers.hpp**: `VK_CHECK` macro and error handling helpers.
+
+## Notes
+
+- **Surface management** is performed in Instance; `Surface.hpp` remains for legacy compatibility.
+- **Texture sampler creation** is implemented under the `Image` namespace and used by `Texture.cpp`.
 
 ### ValidationLayers
 Enables Vulkan validation for debugging (requires Vulkan SDK).
