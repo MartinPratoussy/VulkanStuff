@@ -1,8 +1,8 @@
-#include "Surface.hpp"
+#include "Instance.hpp"
 
 #include <stdexcept>
 
-namespace Surface
+namespace Instance
 {
     void createSurface(VkInstance instance, GLFWwindow *window, VkSurfaceKHR *surface)
     {
@@ -11,4 +11,4 @@ namespace Surface
             throw std::runtime_error("failed to create window surface!");
         }
     }
-} // namespace Surface
+} // namespace Instance

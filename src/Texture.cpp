@@ -1,8 +1,8 @@
-#include "Texture.hpp"
-#include <stdexcept>
+#include "Image.hpp"
+#include "VulkanHelpers.hpp"
 #include <vulkan/vulkan_core.h>
 
-namespace Texture
+namespace Image
 {
     void createTextureSampler(
         VkDevice &device, VkPhysicalDevice &physicalDevice, VkSampler &textureSampler
@@ -29,9 +29,7 @@ namespace Texture
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = 0.0f;
 
-        if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create texture sampler!");
-        }
+        VK_CHECK(vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler),
+                 "create texture sampler");
     }
-} // namespace Texture
+} // namespace Image

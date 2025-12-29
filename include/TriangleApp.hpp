@@ -37,6 +37,12 @@ struct VulkanCore
     VkQueue graphicsQueue = VK_NULL_HANDLE;           ///< Queue for graphics commands
     VkQueue presentQueue = VK_NULL_HANDLE;            ///< Queue for presentation
     VkSurfaceKHR surface = VK_NULL_HANDLE;            ///< Window surface for rendering
+
+    VulkanCore() = default;
+    VulkanCore(const VulkanCore&) = delete;
+    VulkanCore& operator=(const VulkanCore&) = delete;
+    VulkanCore(VulkanCore&&) = default;
+    VulkanCore& operator=(VulkanCore&&) = default;
 };
 
 /**
@@ -52,6 +58,12 @@ struct SwapchainResources
     std::vector<VkImage> images;               ///< Swapchain images (owned by swapchain)
     std::vector<VkImageView> imageViews;       ///< Image views for swapchain images
     std::vector<VkFramebuffer> framebuffers;   ///< Framebuffers (one per swapchain image)
+
+    SwapchainResources() = default;
+    SwapchainResources(const SwapchainResources&) = delete;
+    SwapchainResources& operator=(const SwapchainResources&) = delete;
+    SwapchainResources(SwapchainResources&&) = default;
+    SwapchainResources& operator=(SwapchainResources&&) = default;
 };
 
 /**
@@ -65,6 +77,12 @@ struct PipelineResources
     VkPipelineLayout layout = VK_NULL_HANDLE; ///< Pipeline layout (uniforms, push constants)
     VkRenderPass renderPass = VK_NULL_HANDLE; ///< Render pass (attachments and subpasses)
     VkPipeline pipeline = VK_NULL_HANDLE;     ///< Graphics pipeline (shaders and state)
+
+    PipelineResources() = default;
+    PipelineResources(const PipelineResources&) = delete;
+    PipelineResources& operator=(const PipelineResources&) = delete;
+    PipelineResources(PipelineResources&&) = default;
+    PipelineResources& operator=(PipelineResources&&) = default;
 };
 
 /**
@@ -82,6 +100,12 @@ struct BufferResources
     std::vector<VkBuffer> uniformBuffers;      ///< Uniform buffers for transformation matrices
     std::vector<VkDeviceMemory> uniformMemory; ///< Memory backing uniform buffers
     std::vector<void *> uniformMapped;         ///< Persistently mapped pointers for updates
+
+    BufferResources() = default;
+    BufferResources(const BufferResources&) = delete;
+    BufferResources& operator=(const BufferResources&) = delete;
+    BufferResources(BufferResources&&) = default;
+    BufferResources& operator=(BufferResources&&) = default;
 };
 
 /**
@@ -95,6 +119,12 @@ struct TextureResources
     VkDeviceMemory memory = VK_NULL_HANDLE; ///< Memory backing texture image
     VkImageView view = VK_NULL_HANDLE;      ///< Image view for texture
     VkSampler sampler = VK_NULL_HANDLE;     ///< Sampler (filtering and addressing)
+
+    TextureResources() = default;
+    TextureResources(const TextureResources&) = delete;
+    TextureResources& operator=(const TextureResources&) = delete;
+    TextureResources(TextureResources&&) = default;
+    TextureResources& operator=(TextureResources&&) = default;
 };
 
 /**
@@ -122,6 +152,12 @@ struct SyncResources
      * Ensures a frame slot isn't reused until GPU finishes with it
      */
     std::vector<VkFence> inFlight;
+
+    SyncResources() = default;
+    SyncResources(const SyncResources&) = delete;
+    SyncResources& operator=(const SyncResources&) = delete;
+    SyncResources(SyncResources&&) = default;
+    SyncResources& operator=(SyncResources&&) = default;
 };
 
 /**

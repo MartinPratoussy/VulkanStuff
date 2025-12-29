@@ -5,11 +5,11 @@
 
 #include "TriangleApp.hpp"
 #include "Image.hpp"
-#include "Texture.hpp"
+#include "RenderConstants.hpp"
+#include "VulkanHelpers.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
-#include "glm/ext/vector_float3.hpp"
 #include "glm/trigonometric.hpp"
 #include <cstring>
 
@@ -18,20 +18,18 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <array>
 #include <chrono>
 #include <cstddef>
-#include <stdexcept>
 #include <vulkan/vulkan_core.h>
 
 #include "Buffer.hpp"
 #include "Command.hpp"
 #include "Device.hpp"
-#include "FrameSize.hpp"
 #include "Framebuffer.hpp"
 #include "GraphicsPipeline.hpp"
 #include "ImageViews.hpp"
 #include "Instance.hpp"
-#include "Surface.hpp"
 #include "SwapChain.hpp"
 #include "Synchronisation.hpp"
 
@@ -57,8 +55,9 @@ void TriangleApp::initWindow()
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); ///< Don't create OpenGL context
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);    ///< Allow window resizing
-    window =
-        glfwCreateWindow(FrameSize::WIDTH, FrameSize::HEIGHT, "Vulkan Triangle", nullptr, nullptr);
+    window = glfwCreateWindow(
+        SwapChain::DEFAULT_WIDTH, SwapChain::DEFAULT_HEIGHT, "Vulkan Triangle", nullptr, nullptr
+    );
     glfwSetWindowUserPointer(window, this); ///< Store app pointer for callbacks
     glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
 }
@@ -86,7 +85,7 @@ void TriangleApp::initVulkan()
     // Core Vulkan instance and device setup
     Instance::createInstance(vulkan.instance); ///< Create Vulkan instance with validation layers
 
-    Surface::createSurface(
+    Instance::createSurface(
         vulkan.instance, window, &vulkan.surface
     ); ///< Platform-specific window surface
 
@@ -157,7 +156,7 @@ void TriangleApp::initVulkan()
 
     ImageViews::createTextureImageView(vulkan.device, texture.image, texture.view);
 
-    Texture::createTextureSampler(
+    Image::createTextureSampler(
         vulkan.device, vulkan.physicalDevice, texture.sampler
     ); ///< Texture filtering
 
@@ -269,10 +268,10 @@ void TriangleApp::drawFrame()
         recreateSwapChain();
         return;
     }
-    else if (resAcquire != VK_SUCCESS && resAcquire != VK_SUBOPTIMAL_KHR)
-    {
-        throw std::runtime_error("failed to acquire swap chain image!");
-    }
+    VK_CHECK(
+        (resAcquire == VK_SUCCESS || resAcquire == VK_SUBOPTIMAL_KHR) ? VK_SUCCESS : resAcquire,
+        "acquire swap chain image"
+    );
 
     /// Reset fence only after successfully acquiring image
     vkResetFences(vulkan.device, 1, &sync.inFlight[currentFrame]);
@@ -300,34 +299,35 @@ void TriangleApp::drawFrame()
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
     /// Wait for image to be available before writing colors
-    VkSemaphore waitSemaphores[] = {sync.imageAvailable[currentFrame]};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
+    std::array<VkSemaphore, 1> waitSemaphores = {sync.imageAvailable[currentFrame]};
+    std::array<VkPipelineStageFlags, 1> waitStages = {
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+    };
+    submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
+    submitInfo.pWaitSemaphores = waitSemaphores.data();
+    submitInfo.pWaitDstStageMask = waitStages.data();
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
 
     /// Signal per-image semaphore when rendering is done (critical for preventing reuse)
-    VkSemaphore signalSemaphores[] = {sync.renderFinished[imageIndex]};
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
+    std::array<VkSemaphore, 1> signalSemaphores = {sync.renderFinished[imageIndex]};
+    submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
+    submitInfo.pSignalSemaphores = signalSemaphores.data();
 
-    if (vkQueueSubmit(vulkan.graphicsQueue, 1, &submitInfo, sync.inFlight[currentFrame])
-        != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to submit draw command buffer!");
-    }
+    VK_CHECK(
+        vkQueueSubmit(vulkan.graphicsQueue, 1, &submitInfo, sync.inFlight[currentFrame]),
+        "submit draw command buffer"
+    );
 
     /// Present the rendered image to the screen
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores; ///< Wait for rendering to finish
+    presentInfo.waitSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
+    presentInfo.pWaitSemaphores = signalSemaphores.data(); ///< Wait for rendering to finish
 
-    VkSwapchainKHR swapChains[] = {swapchain.swapChain};
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = swapChains;
+    std::array<VkSwapchainKHR, 1> swapChains = {swapchain.swapChain};
+    presentInfo.swapchainCount = static_cast<uint32_t>(swapChains.size());
+    presentInfo.pSwapchains = swapChains.data();
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr;
 
@@ -340,9 +340,9 @@ void TriangleApp::drawFrame()
         framebufferResized = false;
         recreateSwapChain();
     }
-    else if (resPresent != VK_SUCCESS)
+    else
     {
-        throw std::runtime_error("failed to present swap chain image!");
+        VK_CHECK(resPresent, "present swap chain image");
     }
 
     /// Advance to next frame slot (wraps around)
@@ -369,18 +369,24 @@ void TriangleApp::updateUniformBuffer(std::uint32_t currentImage)
     /// Build transformation matrices
     Buffer::Vertex::UniformBufferObject ubo{};
 
-    /// Model matrix: rotate 90 degrees per second around Z-axis
-    ubo.model = glm::
-        rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    /// View matrix: camera positioned at (2,2,2) looking at origin
-    ubo.view = glm::lookAt(
-        glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)
+    /// Model matrix: rotate using configured speed around Z-axis
+    ubo.model = glm::rotate(
+        glm::mat4(1.0f),
+        time * glm::radians(RenderConstants::ROTATION_SPEED_DEG_PER_SEC),
+        RenderConstants::ROTATION_AXIS
     );
 
-    /// Projection matrix: 45° FOV perspective
+    /// View matrix: camera positioned using configured parameters
+    ubo.view = glm::lookAt(
+        RenderConstants::CAMERA_POSITION, RenderConstants::CAMERA_TARGET, RenderConstants::CAMERA_UP
+    );
+
+    /// Projection matrix: perspective with configured FOV and clipping planes
     ubo.proj = glm::perspective(
-        glm::radians(45.0f), swapchain.extent.width / (float)swapchain.extent.height, 0.1f, 10.0f
+        glm::radians(RenderConstants::CAMERA_FOV_DEGREES),
+        swapchain.extent.width / (float)swapchain.extent.height,
+        RenderConstants::CAMERA_NEAR_PLANE,
+        RenderConstants::CAMERA_FAR_PLANE
     );
     ubo.proj[1][1] *= -1; ///< Flip Y for Vulkan (GLM uses OpenGL conventions)
 

@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -14,6 +15,10 @@
  */
 namespace SwapChain
 {
+    // === Window Configuration ===
+    
+    inline constexpr std::uint32_t DEFAULT_WIDTH = 800;  ///< Initial window width in pixels
+    inline constexpr std::uint32_t DEFAULT_HEIGHT = 600; ///< Initial window height in pixels
     /**
      * @struct SwapChainSupportDetails
      * @brief Swapchain capabilities and supported formats/modes

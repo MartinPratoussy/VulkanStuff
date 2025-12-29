@@ -101,4 +101,19 @@ namespace Image
         uint32_t width,
         uint32_t height
     );
+
+    /**
+     * @brief Create texture sampler with filtering and addressing modes
+     * @param device Logical device
+     * @param physicalDevice Physical device for querying max anisotropy
+     * @param textureSampler Output sampler handle
+     * @details Creates sampler with:
+     *          - Linear filtering (mag/min)
+     *          - Repeat addressing mode
+     *          - Anisotropic filtering enabled (max device support)
+     *          - Unnormalized coordinates disabled (0-1 range)
+     */
+    void createTextureSampler(
+        VkDevice &device, VkPhysicalDevice &physicalDevice, VkSampler &textureSampler
+    );
 } // namespace Image

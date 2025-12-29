@@ -22,7 +22,7 @@ namespace Device
      * @details Rates all available GPUs and selects the best one
      */
     void pickPhysicalDevice(
-        VkInstance &instance, VkPhysicalDevice &physicalDevice, VkSurfaceKHR &surface
+        const VkInstance instance, VkPhysicalDevice &physicalDevice, const VkSurfaceKHR surface
     );
 
     /**
@@ -32,7 +32,7 @@ namespace Device
      * @return Suitability score (higher is better, 0 = unsuitable)
      * @details Prefers discrete GPUs with swapchain and queue support
      */
-    std::uint32_t rateDevice(VkPhysicalDevice device, VkSurfaceKHR surface);
+    std::uint32_t rateDevice(const VkPhysicalDevice device, const VkSurfaceKHR surface);
 
     /**
      * @brief Create logical device with required queues
@@ -44,11 +44,11 @@ namespace Device
      * @details Creates device with graphics and present queue families
      */
     void createLogicalDevice(
-        VkPhysicalDevice physicalDevice,
+        const VkPhysicalDevice physicalDevice,
         VkDevice &device,
         VkQueue &graphicsQueue,
         VkQueue &presentQueue,
-        VkSurfaceKHR surface
+        const VkSurfaceKHR surface
     );
 
     /**
@@ -57,5 +57,5 @@ namespace Device
      * @return true if all required extensions supported
      * @details Verifies VK_KHR_swapchain extension availability
      */
-    bool checkDeviceExtensionSupport(VkPhysicalDevice &device);
+    bool checkDeviceExtensionSupport(const VkPhysicalDevice device);
 } // namespace Device

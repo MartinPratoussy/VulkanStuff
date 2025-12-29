@@ -1,4 +1,5 @@
 #include "Device.hpp"
+#include "VulkanHelpers.hpp"
 
 #include "Queue.hpp"
 #include "ValidationLayers.hpp"
@@ -12,7 +13,7 @@ namespace Device
     const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
     void pickPhysicalDevice(
-        VkInstance &instance, VkPhysicalDevice &physicalDevice, VkSurfaceKHR &surface
+        const VkInstance instance, VkPhysicalDevice &physicalDevice, const VkSurfaceKHR surface
     )
     {
         std::uint32_t deviceCount = 0;
@@ -44,7 +45,7 @@ namespace Device
         }
     }
 
-    std::uint32_t rateDevice(VkPhysicalDevice device, VkSurfaceKHR surface)
+    std::uint32_t rateDevice(const VkPhysicalDevice device, const VkSurfaceKHR surface)
     {
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -77,11 +78,11 @@ namespace Device
     }
 
     void createLogicalDevice(
-        VkPhysicalDevice physicalDevice,
+        const VkPhysicalDevice physicalDevice,
         VkDevice &device,
         VkQueue &graphicsQueue,
         VkQueue &presentQueue,
-        VkSurfaceKHR surface
+        const VkSurfaceKHR surface
     )
     {
         Queue::FamilyIndices indices = Queue::findQueueFamilies(physicalDevice, surface);
@@ -124,16 +125,14 @@ namespace Device
             createInfo.enabledLayerCount = 0;
         }
 
-        if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create logical device!");
-        }
+        VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device),
+                 "create logical device");
 
         vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
         vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
     }
 
-    bool checkDeviceExtensionSupport(VkPhysicalDevice &device)
+    bool checkDeviceExtensionSupport(const VkPhysicalDevice device)
     {
         std::uint32_t extensionCount;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);

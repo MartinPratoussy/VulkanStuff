@@ -41,5 +41,5 @@ namespace Queue
      * @return Queue family indices
      * @details Searches for families supporting both graphics commands and surface presentation
      */
-    FamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
+    FamilyIndices findQueueFamilies(const VkPhysicalDevice device, const VkSurfaceKHR surface);
 } // namespace Queue

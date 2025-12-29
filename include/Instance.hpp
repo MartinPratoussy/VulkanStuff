@@ -7,6 +7,9 @@
 
 #include <cstdint>
 
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
 #include <vulkan/vulkan_core.h>
 
 /**
@@ -27,4 +30,13 @@ namespace Instance
      * @details Creates instance with GLFW extensions and validation layers (debug builds)
      */
     void createInstance(VkInstance &instance);
+
+    /**
+     * @brief Create window surface for rendering
+     * @param instance Vulkan instance
+     * @param window GLFW window handle
+     * @param surface Output surface handle
+     * @details Uses platform-specific extensions (Win32, X11, Wayland, etc.) via GLFW
+     */
+    void createSurface(VkInstance instance, GLFWwindow *window, VkSurfaceKHR *surface);
 } // namespace Instance
