@@ -1,9 +1,26 @@
+/**
+ * @file helper.hpp
+ * @brief Utility functions for file I/O and common operations
+ */
+
 #include <filesystem>
 #include <fstream>
 #include <vector>
 
+/**
+ * @namespace Helper
+ * @brief General utility functions used across the application
+ */
 namespace Helper
 {
+    /**
+     * @brief Read entire file into memory as bytes
+     * @param filename Path to file (relative or absolute)
+     * @return Vector of bytes containing file contents
+     * @throws std::runtime_error if file doesn't exist or can't be opened
+     * @details Reads binary files (e.g., SPIR-V shaders) into memory.
+     *          Prints current working directory for debugging path issues.
+     */
     static std::vector<std::byte> readFile(const std::filesystem::path &filename)
     {
 
